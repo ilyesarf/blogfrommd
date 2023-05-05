@@ -1,9 +1,4 @@
-_site
-.sass-cache
-.jekyll-cache
-.jekyll-metadata
-vendor
 *.swp
 *.html
-./bible
-./site
+bible/
+site/
