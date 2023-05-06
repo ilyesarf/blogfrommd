@@ -2,6 +2,7 @@ import os, shutil
 import markdown
 from collections.abc import Iterable
 import calendar
+from datetime import datetime
 
 class Utils:
     @classmethod
@@ -77,6 +78,7 @@ class Publish:
         
         self.convert = Convert(src_dir, dist_dir)
         self.convert.convert()
+
     
     def md_info(self, filename="2022-03-22-who-am-i"): #extract article title and date and turn them into markdown
         parts = filename.split('-')
@@ -85,19 +87,26 @@ class Publish:
         name = " ".join([w.capitalize() for w in parts[3:]])
         link = os.path.join(self.posts_dir, filename+".html")
 
-        md = f'<span style="font-size: 14px; color: #828282;"> *{date}*</span>\n###[{name}](/{link})\n<br/>'
+        md = f'<span style="font-size: 14px; color: #828282;"> *{date}*</span>\n###[{name}](/{link})\n<br/>\n'
         return md
     
     def sort_posts(self):
-        posts = os.listdir(self.posts_dir)
-        pass
+        sorted_posts = os.listdir(self.posts_dir)
 
-    def update_feed(self):
-        sorted_posts = sorted_posts
- 
-        for file in sorted_posts:
+        sorted_posts.sort(key=lambda x: datetime.strptime('-'.join(x.split('-',3)[:3]), "%Y-%m-%d"))
+        return sorted_posts
+
+
+    def update_feed(self, feed_file=f"bible/index.html"):
+        sorted_posts = self.sort_posts()
+
+        html = ''
+        for file in reversed(sorted_posts):
             info = self.md_info(self.convert.utils.replace_md(file))
-            print(info)
+            html += markdown.markdown(info)
+            
+        with open(feed_file, 'w') as f:
+            f.write(html)
 
     
         
