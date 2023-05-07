@@ -3,6 +3,7 @@ import markdown
 from collections.abc import Iterable
 import calendar
 from datetime import datetime
+from hashlib import md5
 
 class Utils:
     @classmethod
@@ -36,14 +37,25 @@ class Convert:
                 dist_cc.extend(self.utils.flatten([subdir+'/'+d for d in list(filter(self.filter_dir, dirs))] + [os.path.join(subdir, os.path.splitext(f)[0]) for f in list(filter(self.filter_file, files))]))     
         
         return dist_cc
+    
+    def compare_chsum(self, src_file, dist_file):
+        is_same = True
+        if all([os.path.isfile(f) for f in [src_file, dist_file]]):
+            html_src_f = markdown.markdown(open(src_file, 'r').read()).encode()
+            html_dist_f = open(dist_file, 'rb').read()
 
+            is_same = md5(html_src_f).hexdigest() == md5(html_dist_f).hexdigest() 
+
+        return is_same
+        
     def compare_content(self):
         
         site_cc = self.utils.flatten([[subdir+'/'+d for d in list(filter(lambda d: '.' not in d, dirs))] + [os.path.join(subdir, f) for f in files] for subdir, dirs, files in os.walk(self.src_dir)])
 
         dist_cc = self.get_dist_cc() #current content
                 
-        return [c for c in site_cc if self.utils.replace_md(c.replace('site/', './')) not in dist_cc] +\
+        return [c for c in site_cc if self.utils.replace_md(c.replace('site/', './')) not in dist_cc\
+                or self.compare_chsum(c, self.utils.replace_md(c.replace('site/','./'))+'.html') == False] +\
                 [c for c in dist_cc if c.replace('./', 'site/') not in [self.utils.replace_md(x) for x in site_cc]]
     
     def md2html(self, dist_path, src_path):
@@ -55,7 +67,7 @@ class Convert:
 
     def convert(self):
         dist_content = self.compare_content()
-        
+
         for content in dist_content:    
             dist_path = self.utils.replace_md(content.replace(f'{self.src_dir}/', ''))
             if os.path.isdir(content):
@@ -77,10 +89,11 @@ class Publish:
         self.posts_dir = posts_dir
         
         self.convert = Convert(src_dir, dist_dir)
+        self.update_feed()
         self.convert.convert()
 
     
-    def md_info(self, filename="2022-03-22-who-am-i"): #extract article title and date and turn them into markdown
+    def md_info(self, filename): #extract article title and date and turn them into markdown
         parts = filename.split('-')
 
         date = f"{calendar.month_name[int(parts[1])]} {parts[2]}, {parts[0]}" 
@@ -97,19 +110,32 @@ class Publish:
         return sorted_posts
 
 
-    def update_feed(self, feed_file=f"bible/index.html"):
+    def update_feed(self, feed_file="bible/index.markdown"):
+        feed_file = os.path.join(self.src_dir, feed_file)
         sorted_posts = self.sort_posts()
 
-        html = ''
+        md = ''
         for file in reversed(sorted_posts):
             info = self.md_info(self.convert.utils.replace_md(file))
-            html += markdown.markdown(info)
+            md += info
             
         with open(feed_file, 'w') as f:
-            f.write(html)
+            f.write(md)
 
-    
+    @staticmethod
+    def serve(port=8000):
+        import http.server
+        import socketserver
+
+        Handler = http.server.SimpleHTTPRequestHandler
+
+        with socketserver.TCPServer(("", port), Handler) as httpd:
+            print("serving at port", port)
+            try:
+                httpd.serve_forever()
+            except KeyboardInterrupt:
+                httpd.shutdown()
         
 if __name__ == '__main__':
-    convert = Publish()
-    convert.update_feed()
+    publish = Publish()
+    publish.serve()
