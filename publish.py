@@ -1,7 +1,8 @@
 import os, shutil
 import markdown
-from collections.abc import Iterable
 import calendar
+import argparse
+from collections.abc import Iterable
 from datetime import datetime
 from hashlib import md5
 
@@ -22,12 +23,12 @@ class Utils:
     def replace_md(f): return os.path.splitext(f)[0]
 
 class Convert:
-    def __init__(self, src_dir="site", dist_dir="."):
+    def __init__(self, src_dir, dist_dir):
         self.utils = Utils
         self.src_dir = src_dir
         self.dist_dir = dist_dir
 
-        self.filter_dir = lambda d: self.src_dir not in d and '.' not in d
+        self.filter_dir = lambda d: self.src_dir != d.split('/')[0] and '.' not in d
         self.filter_file = lambda f: f[0] != '.' and any(ext in f for ext in ['html', 'md', 'markdown'])
     
     def get_dist_cc(self):
@@ -54,9 +55,10 @@ class Convert:
 
         dist_cc = self.get_dist_cc() #current content
                 
-        return [c for c in site_cc if self.utils.replace_md(c.replace('site/', './')) not in dist_cc\
-                or self.compare_chsum(c, self.utils.replace_md(c.replace('site/','./'))+'.html') == False] +\
-                [c for c in dist_cc if c.replace('./', 'site/') not in [self.utils.replace_md(x) for x in site_cc]]
+        #print([c  for c in site_cc if self.utils.replace_md(c.replace(f'{self.src_dir}/', f'{self.dist_dir}/')) not in dist_cc])
+        return [c for c in site_cc if self.utils.replace_md(c.replace(f'{self.src_dir}/', f'{self.dist_dir}/')) not in dist_cc\
+                or self.compare_chsum(c, self.utils.replace_md(c.replace(f'{self.src_dir}/',f'{self.dist_dir}/'))+'.html') == False] +\
+                [c for c in dist_cc if c.replace(f'{self.dist_dir}/', f'{self.src_dir}/') not in [self.utils.replace_md(x) for x in site_cc]]
     
     def md2html(self, dist_path, src_path):
         with open(src_path, 'r') as f:
@@ -83,9 +85,13 @@ class Convert:
                 os.remove(dist_path+'.html')
 
 class Publish:
-    def __init__(self, src_dir="site", dist_dir=".", posts_dir="bible/posts/"):
+    def __init__(self, src_dir, dist_dir, posts_dir):
         self.src_dir = src_dir
         self.dist_dir = dist_dir
+        print(self.dist_dir)
+        if os.path.isdir(self.dist_dir) and self.dist_dir != ".":
+            os.mkdir(self.dist_dir)
+
         self.posts_dir = posts_dir
         
         self.convert = Convert(src_dir, dist_dir)
@@ -104,7 +110,7 @@ class Publish:
         return md
     
     def sort_posts(self):
-        sorted_posts = os.listdir(self.posts_dir)
+        sorted_posts = os.listdir(f"{self.src_dir}/{self.posts_dir}")
 
         sorted_posts.sort(key=lambda x: datetime.strptime('-'.join(x.split('-',3)[:3]), "%Y-%m-%d"))
         return sorted_posts
@@ -134,8 +140,20 @@ class Publish:
             try:
                 httpd.serve_forever()
             except KeyboardInterrupt:
+                print("Shutting down server...")
                 httpd.shutdown()
         
 if __name__ == '__main__':
-    publish = Publish()
-    publish.serve()
+    parser = argparse.ArgumentParser(description="blogfrommd manuel")
+    parser.add_argument('--src_dir', default='site', help='Specify the source directory')
+
+    parser.add_argument('--dist_dir', default='.', help='Specify the destination directory')
+
+    parser.add_argument('--posts_dir', default='bible/posts', help='Specify the posts directory')
+    parser.add_argument('--serve', action='store_true', help='Enable serving the application')
+
+    args = parser.parse_args()
+    publish = Publish(src_dir=args.src_dir, dist_dir=args.dist_dir, posts_dir=args.posts_dir)
+    
+    if args.serve:
+        publish.serve()
