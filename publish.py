@@ -23,12 +23,12 @@ class Utils:
     def replace_md(f): return os.path.splitext(f)[0]
 
 class Convert:
-    def __init__(self, src_dir, dist_dir):
+    def __init__(self, src_dir, dist_dir, tool_dir='tool'):
         self.utils = Utils
         self.src_dir = src_dir
         self.dist_dir = dist_dir
 
-        self.filter_dir = lambda d: self.src_dir != d.split('/')[0] and '.' not in d
+        self.filter_dir = lambda d: self.src_dir != d.split('/')[0] and '.' not in d and d != os.path.basename(os.getcwd()) and tool_dir != os.path.basename(d)
         self.filter_file = lambda f: f[0] != '.' and any(ext in f for ext in ['html', 'md', 'markdown'])
     
     def get_dist_cc(self):
@@ -49,13 +49,11 @@ class Convert:
 
         return is_same
         
-    def compare_content(self):
-        
+    def compare_content(self):        
         site_cc = self.utils.flatten([[subdir+'/'+d for d in list(filter(lambda d: '.' not in d, dirs))] + [os.path.join(subdir, f) for f in files] for subdir, dirs, files in os.walk(self.src_dir)])
 
         dist_cc = self.get_dist_cc() #current content
-                
-        #print([c  for c in site_cc if self.utils.replace_md(c.replace(f'{self.src_dir}/', f'{self.dist_dir}/')) not in dist_cc])
+        
         return [c for c in site_cc if self.utils.replace_md(c.replace(f'{self.src_dir}/', f'{self.dist_dir}/')) not in dist_cc\
                 or self.compare_chsum(c, self.utils.replace_md(c.replace(f'{self.src_dir}/',f'{self.dist_dir}/'))+'.html') == False] +\
                 [c for c in dist_cc if c.replace(f'{self.dist_dir}/', f'{self.src_dir}/') not in [self.utils.replace_md(x) for x in site_cc]]
