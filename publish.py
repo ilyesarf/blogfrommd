@@ -23,7 +23,7 @@ class Utils:
     def replace_md(f): return os.path.splitext(f)[0]
 
 class Convert:
-    def __init__(self, src_dir, dist_dir, tool_dir='tool'):
+    def __init__(self, src_dir, dist_dir, tool_dir):
         self.utils = Utils
         self.src_dir = src_dir
         self.dist_dir = dist_dir
@@ -83,16 +83,15 @@ class Convert:
                 os.remove(dist_path+'.html')
 
 class Publish:
-    def __init__(self, src_dir, dist_dir, posts_dir):
+    def __init__(self, src_dir, dist_dir, posts_dir, tool_dir):
         self.src_dir = src_dir
         self.dist_dir = dist_dir
-        print(self.dist_dir)
         if not os.path.isdir(self.dist_dir) and self.dist_dir != ".":
             os.mkdir(self.dist_dir)
 
         self.posts_dir = posts_dir
         
-        self.convert = Convert(src_dir, dist_dir)
+        self.convert = Convert(src_dir, dist_dir, tool_dir)
         self.update_feed()
         self.convert.convert()
 
@@ -143,6 +142,7 @@ class Publish:
         
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="blogfrommd manuel")
+    parser.add_argument('--tool_dir', default='blogfrommd', help='Specify the tool directory')
     parser.add_argument('--src_dir', default='site', help='Specify the source directory')
 
     parser.add_argument('--dist_dir', default='.', help='Specify the destination directory')
