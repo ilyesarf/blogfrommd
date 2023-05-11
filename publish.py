@@ -71,7 +71,7 @@ class Convert:
         dist_content = self.compare_content()
 
         for content in dist_content:    
-            dist_path = self.utils.replace_md(content.replace(f'{self.src_dir}/', ''))
+            dist_path = self.utils.replace_md(content.replace(f'{self.src_dir}/', f'{self.dist_dir}/'))
             if os.path.isdir(content):
                 os.mkdir(dist_path)
 
@@ -89,7 +89,7 @@ class Publish:
         self.src_dir = src_dir
         self.dist_dir = dist_dir
         print(self.dist_dir)
-        if os.path.isdir(self.dist_dir) and self.dist_dir != ".":
+        if not os.path.isdir(self.dist_dir) and self.dist_dir != ".":
             os.mkdir(self.dist_dir)
 
         self.posts_dir = posts_dir
