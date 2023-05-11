@@ -151,7 +151,7 @@ if __name__ == '__main__':
     parser.add_argument('--serve', action='store_true', help='Enable serving the application')
 
     args = parser.parse_args()
-    publish = Publish(src_dir=args.src_dir, dist_dir=args.dist_dir, posts_dir=args.posts_dir)
+    publish = Publish(src_dir=args.src_dir, dist_dir=args.dist_dir, posts_dir=args.posts_dir, tool_dir=args.tool_dir)
     
     if args.serve:
         publish.serve()
