@@ -151,6 +151,13 @@ if __name__ == '__main__':
     parser.add_argument('--serve', action='store_true', help='Enable serving the application')
 
     args = parser.parse_args()
+
+    #remove / in the ending of a directory name
+    for arg in vars(args):
+        if 'dir' in arg:
+            if vars(args)[arg][-1] == '/':
+                vars(args)[arg] = vars(args)[arg][:-1]
+        
     publish = Publish(src_dir=args.src_dir, dist_dir=args.dist_dir, posts_dir=args.posts_dir, tool_dir=args.tool_dir)
     
     if args.serve:
