@@ -2,6 +2,7 @@ import os, shutil
 import markdown
 import calendar
 import argparse
+import yaml
 from collections.abc import Iterable
 from datetime import datetime
 from hashlib import md5
@@ -22,9 +23,26 @@ class Utils:
     @staticmethod
     def replace_md(f): return os.path.splitext(f)[0]
 
+class Config:
+    def __init__(self, conf_file):
+        self.conf = yaml.safe_load(open(conf_file, 'r'))
+
+    def apply_style(self, file):
+        style = self.conf["style"]
+        font = style["font"]
+        print(font)
+
+        style_html = "\n<style>body {font-family: %s}</style>\n" % font
+        
+        with open(file, "a") as f:
+            f.write(style_html)
+        
 class Convert:
-    def __init__(self, src_dir, dist_dir, tool_dir):
+    def __init__(self, src_dir, dist_dir, tool_dir='tool', conf_file="conf.yml"):
         self.utils = Utils
+        if os.path.isfile(conf_file):
+            self.config = Config(conf_file)
+
         self.src_dir = src_dir
         self.dist_dir = dist_dir
 
@@ -60,6 +78,7 @@ class Convert:
     
     def md2html(self, dist_path, src_path):
         with open(src_path, 'r') as f:
+            self.config.apply_style(src_path)
             html = markdown.markdown(f.read())
         
         with open(dist_path, 'w') as f:
@@ -83,7 +102,7 @@ class Convert:
                 os.remove(dist_path+'.html')
 
 class Publish:
-    def __init__(self, src_dir, dist_dir, posts_dir, tool_dir):
+    def __init__(self, conf_file, src_dir, dist_dir, posts_dir):
         self.src_dir = src_dir
         self.dist_dir = dist_dir
         if not os.path.isdir(self.dist_dir) and self.dist_dir != ".":
@@ -91,7 +110,7 @@ class Publish:
 
         self.posts_dir = posts_dir
         
-        self.convert = Convert(src_dir, dist_dir, tool_dir)
+        self.convert = Convert(src_dir, dist_dir, conf_file=conf_file)
         self.update_feed()
         self.convert.convert()
 
@@ -141,8 +160,9 @@ class Publish:
                 httpd.shutdown()
         
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="blogfrommd manuel")
-    parser.add_argument('--tool_dir', default='blogfrommd', help='Specify the tool directory')
+    parser = argparse.ArgumentParser(description="blogfrommd manual")
+
+    parser.add_argument('--conf_file', default='conf.yml', help='Specify the config file path')
     parser.add_argument('--src_dir', default='site', help='Specify the source directory')
 
     parser.add_argument('--dist_dir', default='.', help='Specify the destination directory')
@@ -157,8 +177,8 @@ if __name__ == '__main__':
         if 'dir' in arg:
             if vars(args)[arg][-1] == '/':
                 vars(args)[arg] = vars(args)[arg][:-1]
-        
-    publish = Publish(src_dir=args.src_dir, dist_dir=args.dist_dir, posts_dir=args.posts_dir, tool_dir=args.tool_dir)
+                
+    publish = Publish(conf_file=args.conf_file, src_dir=args.src_dir, dist_dir=args.dist_dir, posts_dir=args.posts_dir)
     
     if args.serve:
         publish.serve()
