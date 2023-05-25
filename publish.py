@@ -30,12 +30,10 @@ class Config:
     def apply_style(self, file):
         style = self.conf["style"]
         font = style["font"]
-        print(font)
 
         style_html = "\n<style>body {font-family: %s}</style>\n" % font
         
-        with open(file, "a") as f:
-            f.write(style_html)
+        return style_html
         
 class Convert:
     def __init__(self, src_dir, dist_dir, tool_dir='tool', conf_file="conf.yml"):
@@ -77,9 +75,14 @@ class Convert:
                 [c for c in dist_cc if c.replace(f'{self.dist_dir}/', f'{self.src_dir}/') not in [self.utils.replace_md(x) for x in site_cc]]
     
     def md2html(self, dist_path, src_path):
-        with open(src_path, 'r') as f:
-            self.config.apply_style(src_path)
-            html = markdown.markdown(f.read())
+        with open(src_path, 'r+') as f:
+            style_html = self.config.apply_style(src_path)
+            content = f.readlines()
+            if content[-1].strip() != style_html.strip():           
+                content[-1] = style_html
+                f.write(style_html)
+
+            html = markdown.markdown("".join(content))
         
         with open(dist_path, 'w') as f:
             f.write(html)
