@@ -36,7 +36,7 @@ class Config:
         return style_html
         
 class Convert:
-    def __init__(self, src_dir, dist_dir, tool_dir='tool', conf_file="conf.yml"):
+    def __init__(self, src_dir, dist_dir, tool_dir, conf_file):
         self.utils = Utils
         if os.path.isfile(conf_file):
             self.config = Config(conf_file)
@@ -105,7 +105,7 @@ class Convert:
                 os.remove(dist_path+'.html')
 
 class Publish:
-    def __init__(self, conf_file, src_dir, dist_dir, posts_dir):
+    def __init__(self, conf_file, tool_dir, src_dir, dist_dir, posts_dir):
         self.src_dir = src_dir
         self.dist_dir = dist_dir
         if not os.path.isdir(self.dist_dir) and self.dist_dir != ".":
@@ -113,7 +113,7 @@ class Publish:
 
         self.posts_dir = posts_dir
         
-        self.convert = Convert(src_dir, dist_dir, conf_file=conf_file)
+        self.convert = Convert(src_dir, dist_dir, tool_dir, conf_file)
         self.update_feed()
         self.convert.convert()
 
@@ -166,6 +166,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="blogfrommd manual")
 
     parser.add_argument('--conf_file', default='conf.yml', help='Specify the config file path')
+
+    parser.add_argument('--tool_dir', default='blogfrommd', help='Specify the blogfrommd directory (only when you\'re running it outside the directory)')
     parser.add_argument('--src_dir', default='site', help='Specify the source directory')
 
     parser.add_argument('--dist_dir', default='.', help='Specify the destination directory')
@@ -181,7 +183,7 @@ if __name__ == '__main__':
             if vars(args)[arg][-1] == '/':
                 vars(args)[arg] = vars(args)[arg][:-1]
                 
-    publish = Publish(conf_file=args.conf_file, src_dir=args.src_dir, dist_dir=args.dist_dir, posts_dir=args.posts_dir)
+    publish = Publish(conf_file=args.conf_file, tool_dir=args.tool_dir, src_dir=args.src_dir, dist_dir=args.dist_dir, posts_dir=args.posts_dir)
     
     if args.serve:
         publish.serve()
