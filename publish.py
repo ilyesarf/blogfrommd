@@ -27,13 +27,28 @@ class Config:
     def __init__(self, conf_file):
         self.conf = yaml.safe_load(open(conf_file, 'r'))
 
-    def apply_style(self, file):
+    def get_style(self):
         style = self.conf["style"]
-        font = style["font"]
+        supported_conf = {"font": "", "bg-color": "\"\""}
+        if style:
+            for k in style.keys():
+                if k in supported_conf.keys():
+                    supported_conf[k] = style[k]
+                else:
+                    print(f"{k} is not supported yet")
 
-        style_html = "\n<style>body {font-family: %s}</style>\n" % font
+        style_html = f"\n<style> body {{font-family: {supported_conf['font']};background-color: {supported_conf['bg-color']}}}</style>\n"
         
         return style_html
+    
+    def apply_style(self, files):
+        for file in files:
+            with open(file, 'r') as f:
+                style_html = self.get_style()
+                content = f.readlines()
+                if content[-1].strip() != style_html.strip():           
+                    content[-1] = style_html
+                    open(file, 'w').write("".join(content))
         
 class Convert:
     def __init__(self, src_dir, dist_dir, tool_dir, conf_file):
@@ -67,6 +82,7 @@ class Convert:
         
     def compare_content(self):        
         site_cc = self.utils.flatten([[subdir+'/'+d for d in list(filter(lambda d: '.' not in d, dirs))] + [os.path.join(subdir, f) for f in files] for subdir, dirs, files in os.walk(self.src_dir)])
+        self.config.apply_style([file for file in site_cc if os.path.isfile(file)])
 
         dist_cc = self.get_dist_cc() #current content
         
@@ -75,14 +91,8 @@ class Convert:
                 [c for c in dist_cc if c.replace(f'{self.dist_dir}/', f'{self.src_dir}/') not in [self.utils.replace_md(x) for x in site_cc]]
     
     def md2html(self, dist_path, src_path):
-        with open(src_path, 'r+') as f:
-            style_html = self.config.apply_style(src_path)
-            content = f.readlines()
-            if content[-1].strip() != style_html.strip():           
-                content[-1] = style_html
-                f.write(style_html)
-
-            html = markdown.markdown("".join(content))
+        with open(src_path, 'r') as f:
+            html = markdown.markdown(f.read())
         
         with open(dist_path, 'w') as f:
             f.write(html)
