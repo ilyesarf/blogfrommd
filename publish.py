@@ -59,7 +59,7 @@ class Convert:
         self.src_dir = src_dir
         self.dist_dir = dist_dir
 
-        self.filter_dir = lambda d: self.src_dir != d.split('/')[0] and '.' not in d and d != os.path.basename(os.getcwd()) and tool_dir != os.path.basename(d)
+        self.filter_dir = lambda d: self.src_dir != d.split('/')[0] and '.' not in d and d != os.path.basename(os.getcwd()) and tool_dir != d.split('/')[0]
         self.filter_file = lambda f: f[0] != '.' and any(ext in f for ext in ['html', 'md', 'markdown'])
     
     def get_dist_cc(self):
@@ -67,7 +67,7 @@ class Convert:
         for subdir, dirs, files in os.walk(self.dist_dir):
             if self.filter_dir(subdir[2:]):
                 dist_cc.extend(self.utils.flatten([subdir+'/'+d for d in list(filter(self.filter_dir, dirs))] + [os.path.join(subdir, os.path.splitext(f)[0]) for f in list(filter(self.filter_file, files))]))     
-        
+
         return dist_cc
     
     def compare_chsum(self, src_file, dist_file):
