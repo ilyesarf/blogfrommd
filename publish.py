@@ -175,15 +175,15 @@ class Publish:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="blogfrommd manual")
 
-    parser.add_argument('--conf_file', default='conf.yml', help='Specify the config file path')
+    parser.add_argument('--conf_file', default='conf.yml', help='Specify the config file path (default: conf.yml)')
 
     parser.add_argument('--tool_dir', default='blogfrommd', help='Specify the blogfrommd directory (only when you\'re running it outside the directory)')
-    parser.add_argument('--src_dir', default='site', help='Specify the source directory')
+    parser.add_argument('--src_dir', default='site', help='Specify the source directory (default: site/)')
 
-    parser.add_argument('--dist_dir', default='.', help='Specify the destination directory')
+    parser.add_argument('--dist_dir', default='.', help='Specify the destination directory (default: ./)')
 
-    parser.add_argument('--posts_dir', default='bible/posts', help='Specify the posts directory')
-    parser.add_argument('--serve', action='store_true', help='Enable serving the application')
+    parser.add_argument('--posts_dir', default='posts', help='Specify the posts directory (default: posts/)')
+    parser.add_argument('--serve', action='store_true', help='Host blog on port 8000')
 
     args = parser.parse_args()
 
