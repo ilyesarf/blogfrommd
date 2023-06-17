@@ -43,10 +43,11 @@ class Config:
     
     def apply_style(self, files):
         for file in files:
+
+            print(file)
             with open(file, 'r') as f:
                 style_html = self.get_style()
                 content = f.readlines()
-
                 if content[-1].strip() != style_html.strip():           
                     if '<style>' in content[-1].strip():
                         content[-1] = style_html.strip()
@@ -73,7 +74,7 @@ class Convert:
             current_depth = subdir[len(self.src_dir):].count(os.path.sep)
             if current_depth <= depth:  # Specify the maximum depth here
                 subdir_files = [subdir+'/'+d for d in list(filter(lambda d: '.' not in d, dirs))]
-                subdir_files += [os.path.join(subdir, f) for f in files]
+                subdir_files += [os.path.join(subdir, f) for f in list(filter(self.filter_file, files))]
                 src_cc.append(subdir_files)
  
         return self.utils.flatten(src_cc)
