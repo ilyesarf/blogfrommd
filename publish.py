@@ -64,7 +64,7 @@ class Convert:
         self.src_dir = src_dir
         self.dist_dir = dist_dir
 
-        self.filter_dir = lambda d: self.src_dir != d.split('/')[0] and '.' not in d and d != os.path.basename(os.getcwd()) and tool_dir != d.split('/')[0]
+        self.filter_dir = lambda d: self.src_dir != d.split('/')[0] and '.' not in d and d != os.path.basename(os.getcwd()) and tool_dir != os.path.basename(d)
         self.filter_file = lambda f: f[0] != '.' and any(ext in f for ext in ['html', 'md', 'markdown'])
     
     def get_src_cc(self, depth=3):
@@ -83,7 +83,7 @@ class Convert:
         for subdir, dirs, files in os.walk(self.dist_dir):
             if self.filter_dir(subdir[2:]):
                 dist_cc.extend(self.utils.flatten([subdir+'/'+d for d in list(filter(self.filter_dir, dirs))] + [os.path.join(subdir, os.path.splitext(f)[0]) for f in list(filter(self.filter_file, files))]))     
-
+        
         return dist_cc
     
     def compare_chsum(self, src_file, dist_file):
@@ -131,7 +131,7 @@ class Convert:
                 os.remove(dist_path+'.html')
 
 class Publish:
-    def __init__(self, conf_file, tool_dir, src_dir, dist_dir, posts_dir):
+    def __init__(self, conf_file, tool_dir, src_dir, dist_dir, posts_dir, feed):
         self.src_dir = src_dir
         self.dist_dir = dist_dir
         if not os.path.isdir(self.dist_dir) and self.dist_dir != ".":
@@ -140,9 +140,10 @@ class Publish:
         self.posts_dir = posts_dir
         
         self.convert = Convert(src_dir, dist_dir, tool_dir, conf_file)
-        for ele in self.convert.get_src_cc(depth=0):
-            if os.path.isdir(ele):
-                self.update_feed(ele)
+        if feed:
+            for ele in self.convert.get_src_cc(depth=0):
+                if os.path.isdir(ele):
+                    self.update_feed(ele)
         self.convert.convert()
 
     
@@ -199,10 +200,10 @@ if __name__ == '__main__':
 
     parser.add_argument('--tool_dir', default='blogfrommd', help='Specify the blogfrommd directory (only when you\'re running it outside the directory)')
     parser.add_argument('--src_dir', default='site', help='Specify the source directory (default: site/)')
-
     parser.add_argument('--dist_dir', default='.', help='Specify the destination directory (default: ./)')
-
     parser.add_argument('--posts_dir', default='posts', help='Specify the posts directory (default: posts/)')
+
+    parser.add_argument('--feed', action='store_true', help='Generate a feed of blog posts')
     parser.add_argument('--serve', action='store_true', help='Host blog on port 8000')
 
     args = parser.parse_args()
@@ -213,7 +214,7 @@ if __name__ == '__main__':
             if vars(args)[arg][-1] == '/':
                 vars(args)[arg] = vars(args)[arg][:-1]
                 
-    publish = Publish(conf_file=args.conf_file, tool_dir=args.tool_dir, src_dir=args.src_dir, dist_dir=args.dist_dir, posts_dir=args.posts_dir)
+    publish = Publish(conf_file=args.conf_file, tool_dir=args.tool_dir, src_dir=args.src_dir, dist_dir=args.dist_dir, posts_dir=args.posts_dir, feed=args.feed)
     
     if args.serve:
         publish.serve()
