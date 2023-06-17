@@ -46,8 +46,13 @@ class Config:
             with open(file, 'r') as f:
                 style_html = self.get_style()
                 content = f.readlines()
+
                 if content[-1].strip() != style_html.strip():           
-                    content[-1] = style_html
+                    if '<style>' in content[-1].strip():
+                        content[-1] = style_html.strip()
+                    else:
+                        content += style_html
+
                     open(file, 'w').write("".join(content))
         
 class Convert:
