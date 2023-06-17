@@ -43,8 +43,6 @@ class Config:
     
     def apply_style(self, files):
         for file in files:
-
-            print(file)
             with open(file, 'r') as f:
                 style_html = self.get_style()
                 content = f.readlines()
@@ -65,7 +63,7 @@ class Convert:
         self.src_dir = src_dir
         self.dist_dir = dist_dir
 
-        self.filter_dir = lambda d: self.src_dir != d.split('/')[0] and '.' not in d and d != os.path.basename(os.getcwd()) and tool_dir != os.path.basename(d)
+        self.filter_dir = lambda d: self.src_dir != d.split('/')[0] and '.' not in d and d != os.path.basename(os.getcwd()) and tool_dir != d.split('/')[0]
         self.filter_file = lambda f: f[0] != '.' and any(ext in f for ext in ['html', 'md', 'markdown'])
     
     def get_src_cc(self, depth=3):
@@ -76,7 +74,7 @@ class Convert:
                 subdir_files = [subdir+'/'+d for d in list(filter(lambda d: '.' not in d, dirs))]
                 subdir_files += [os.path.join(subdir, f) for f in list(filter(self.filter_file, files))]
                 src_cc.append(subdir_files)
- 
+
         return self.utils.flatten(src_cc)
 
     def get_dist_cc(self):
