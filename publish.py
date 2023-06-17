@@ -62,6 +62,17 @@ class Convert:
         self.filter_dir = lambda d: self.src_dir != d.split('/')[0] and '.' not in d and d != os.path.basename(os.getcwd()) and tool_dir != d.split('/')[0]
         self.filter_file = lambda f: f[0] != '.' and any(ext in f for ext in ['html', 'md', 'markdown'])
     
+    def get_src_cc(self, depth=3):
+        src_cc = []
+        for subdir, dirs, files in os.walk(self.src_dir):
+            current_depth = subdir[len(self.src_dir):].count(os.path.sep)
+            if current_depth <= depth:  # Specify the maximum depth here
+                subdir_files = [subdir+'/'+d for d in list(filter(lambda d: '.' not in d, dirs))]
+                subdir_files += [os.path.join(subdir, f) for f in files]
+                src_cc.append(subdir_files)
+ 
+        return self.utils.flatten(src_cc)
+
     def get_dist_cc(self):
         dist_cc = []
         for subdir, dirs, files in os.walk(self.dist_dir):
@@ -81,7 +92,7 @@ class Convert:
         return is_same
         
     def compare_content(self):        
-        site_cc = self.utils.flatten([[subdir+'/'+d for d in list(filter(lambda d: '.' not in d, dirs))] + [os.path.join(subdir, f) for f in files] for subdir, dirs, files in os.walk(self.src_dir)])
+        site_cc = self.get_src_cc() 
         self.config.apply_style([file for file in site_cc if os.path.isfile(file)])
 
         dist_cc = self.get_dist_cc() #current content
@@ -124,34 +135,38 @@ class Publish:
         self.posts_dir = posts_dir
         
         self.convert = Convert(src_dir, dist_dir, tool_dir, conf_file)
-        self.update_feed()
+        for ele in self.convert.get_src_cc(depth=0):
+            if os.path.isdir(ele):
+                self.update_feed(ele)
         self.convert.convert()
 
     
-    def md_info(self, filename): #extract article title and date and turn them into markdown
+    def md_info(self, full_posts_dir, filename): #extract article title and date and turn them into markdown
         parts = filename.split('-')
 
         date = f"{calendar.month_name[int(parts[1])]} {parts[2]}, {parts[0]}" 
         name = " ".join([w.capitalize() for w in parts[3:]])
-        link = os.path.join(self.posts_dir, filename+".html")
+        link = os.path.join(full_posts_dir.replace(self.src_dir+'/', ''), filename+".html")
 
         md = f'<span style="font-size: 14px; color: #828282;"> *{date}*</span>\n###[{name}](/{link})\n<br/>\n'
         return md
     
-    def sort_posts(self):
-        sorted_posts = os.listdir(f"{self.src_dir}/{self.posts_dir}")
+    def sort_posts(self, full_posts_dir):
+        sorted_posts = os.listdir(full_posts_dir)
 
         sorted_posts.sort(key=lambda x: datetime.strptime('-'.join(x.split('-',3)[:3]), "%Y-%m-%d"))
         return sorted_posts
 
 
-    def update_feed(self, feed_file="bible/index.markdown"):
-        feed_file = os.path.join(self.src_dir, feed_file)
-        sorted_posts = self.sort_posts()
+    def update_feed(self, base_dir, feed_file="index.markdown"):
+        full_posts_dir = os.path.join(base_dir, self.posts_dir)
+
+        feed_file = os.path.join(base_dir, feed_file)
+        sorted_posts = self.sort_posts(full_posts_dir)
 
         md = ''
         for file in reversed(sorted_posts):
-            info = self.md_info(self.convert.utils.replace_md(file))
+            info = self.md_info(full_posts_dir, self.convert.utils.replace_md(file))
             md += info
             
         with open(feed_file, 'w') as f:
