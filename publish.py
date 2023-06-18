@@ -29,7 +29,7 @@ class Config:
 
     def get_style(self):
         style = self.conf["style"]
-        supported_conf = {"font": "", "bg-color": "\"\""}
+        supported_conf = {"font": "", "bg-color": "\"\"", "color": "\"\""}
         if style:
             for k in style.keys():
                 if k in supported_conf.keys():
@@ -37,7 +37,9 @@ class Config:
                 else:
                     print(f"{k} is not supported yet")
 
-        style_html = f"\n<style> body {{font-family: {supported_conf['font']};background-color: {supported_conf['bg-color']}}}</style>\n"
+        style_html = f"\n<style> body {{font-family: {supported_conf['font']};\
+            background-color: {supported_conf['bg-color']}; \
+            color: {supported_conf['color']}}}</style>\n"
         
         return style_html
     
