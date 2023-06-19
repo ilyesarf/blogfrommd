@@ -29,18 +29,13 @@ class Config:
 
     def get_style(self):
         style = self.conf["style"]
-        supported_conf = {"font": "", "bg-color": "\"\"", "color": "\"\""}
-        if style:
-            for k in style.keys():
-                if k in supported_conf.keys():
-                    supported_conf[k] = style[k]
-                else:
-                    print(f"{k} is not supported yet")
 
-        style_html = f"\n<style> body {{font-family: {supported_conf['font']};\
-            background-color: {supported_conf['bg-color']}; \
-            color: {supported_conf['color']}}}</style>\n"
-        
+        style_html = "\n<style> body {"
+        if style:
+            for k, v in style.items():
+                style_html += f"{k}: {v};"
+        style_html += "}</style>\n"
+        print(style_html)
         return style_html
     
     def apply_style(self, files):

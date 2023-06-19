@@ -1,3 +1,4 @@
 style:
-  font: "'Lucida Console', monospace"
-  
+  font-size: "'Lucida Console', monospace"
+  background: "#411"
+  color: "lemonchiffon"
